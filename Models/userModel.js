@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcrypt');
  
 const userSchema = new mongoose.Schema({
 
@@ -33,9 +34,31 @@ const userSchema = new mongoose.Schema({
             },
             message: 'Password and confirm password does not match'
         }
-    }
+    },
 
+    passwordChangedAt : Date
 })
+
+
+userSchema.pre('save', async function(next){
+
+    if(!this.isModified('password')) return next();
+
+    //encrypt password
+    this.password = await bcrypt.hash(this.password,12);
+    this.confirmPassword = undefined;
+
+    next();
+});
+
+// compare password
+userSchema.methods.comparePasswordsInDb = async function(pswd, pswdDB){
+    return await bcrypt.compare(pswd, pswdDB);
+}
+
+
+
+
 
 const User = new mongoose.model('User',userSchema);
 
