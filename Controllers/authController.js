@@ -1,5 +1,6 @@
 const User = require('./../Models/UserModel');
 const jwt = require('jsonwebtoken');
+const util = require('util');
 
 const signToken = id => {
     return jwt.sign(
@@ -67,6 +68,66 @@ exports.login = async (req, res, next) => {
         console.log(err.message);
     }
 
+    
+}
+
+
+exports.protect = async( req, res, next) => {
+
+    try {
+        //1. read the token and check if it exist
+     
+        const testToken = req.headers.authorization;
+        let token;
+
+        if(testToken && testToken.startsWith('Bearer')){
+            token = testToken.split(' ')[1];
+        }
+        if(!testToken){
+            res.status(400).json({
+                status: 'fail',
+                message: 'You are not logged in'
+            })
+        }
+
+        //2.validate the token
+
+        const decodedToken = await util.promisify(jwt.verify)(token, process.env.SECRETE_STR);
+        console.log(decodedToken);
+        
+        //3. if user exist
+
+        const user = await User.findById(decodedToken.id);
+
+        if(!user){
+            res.status(400).json({
+                status: 'fail',
+                message: 'The user with the given token does not exist'
+            })
+        }
+
+
+        //4. if the user change password after the token was issued
+
+        const PasswordChanged = await user.isPasswordChanged(decodedToken.iat)
+
+        if(PasswordChanged){
+            res.status(400).json({
+                status: 'fail',
+                message: 'The password has been changed'
+            })
+        }
+
+        //5. allow user to access route
+        //This is for the next middleware
+
+        req.user = user
+        //console.log(req.user._id);
+        next();
+
+    } catch (err) {
+        console.log(err.message);
+    }
     
 }
 

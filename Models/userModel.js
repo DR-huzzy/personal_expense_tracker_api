@@ -51,12 +51,24 @@ userSchema.pre('save', async function(next){
     next();
 });
 
-// compare password
+//a method to compare password
 userSchema.methods.comparePasswordsInDb = async function(pswd, pswdDB){
     return await bcrypt.compare(pswd, pswdDB);
 }
 
+// a method to check if user has changed the password
+userSchema.methods.isPasswordChanged = async function(JWTTimeStamp){
 
+    if(this.passwordChangedAt){
+
+        // convert passwordChangedAt to timeStamp
+        const pswdChangedTimeStamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+        console.log(JWTTimeStamp, pswdChangedTimeStamp);
+
+        return JWTTimeStamp < pswdChangedTimeStamp;
+    }
+    return false;
+}
 
 
 
