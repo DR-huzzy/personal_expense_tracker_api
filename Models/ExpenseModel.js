@@ -11,12 +11,13 @@ const expenseSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
-        enum: [Groceries, Leisure, Electronics, Utilities, Clothing, Health, Others]
+        enum: ['Groceries', 'Leisure', 'Electronics', 'Utilities', 'Clothing', 'Health', 'Others']
     },
 
     date: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        select: true
     },
 
     description: {
