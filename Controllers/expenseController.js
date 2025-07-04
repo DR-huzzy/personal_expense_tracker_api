@@ -33,8 +33,44 @@ exports.createExpense = async (req, res, next) => {
 exports.getExpense = async (req, res, next) => {
     
     try {
+        const { timeframe, start, end } = req.query;
+
         const userId = req.user._id
-        const expenses = await Expense.find({user : userId});
+        const query = {user : userId}
+        
+
+        // Apply filters if provided
+        if (timeframe) {
+            const now = new Date();
+            let startDate;
+
+            switch (timeframe) {
+                case 'week':
+                startDate = new Date(now.setDate(now.getDate() - 7));
+                break;
+                case 'month':
+                startDate = new Date(now.setMonth(now.getMonth() - 1));
+                break;
+                case '3months':
+                startDate = new Date(now.setMonth(now.getMonth() - 3));
+                break;
+                default:
+                return res.status(400).json({ error: 'Invalid timeframe' });
+            }
+            query.date = { $gte: startDate };
+        }
+
+
+        // Custom date range (overrides timeframe)
+        if (start && end) {
+            query.date = {
+                $gte: new Date(start),
+                $lte: new Date(end)
+            };
+        }
+
+
+        const expenses = await Expense.find(query);
 
         res.status(201).json({
             status: 'success',
@@ -53,6 +89,46 @@ exports.getExpense = async (req, res, next) => {
 };
 
 
+/* exports.getExpenses = async (req, res) => {
+  try {
+    const { timeframe, start, end } = req.query;
+    const query = { user: req.userId };
+
+    // Apply filters if provided
+    if (timeframe) {
+      const now = new Date();
+      let startDate;
+
+      switch (timeframe) {
+        case 'week':
+          startDate = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case 'month':
+          startDate = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case '3months':
+          startDate = new Date(now.setMonth(now.getMonth() - 3));
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid timeframe' });
+      }
+      query.date = { $gte: startDate };
+    }
+
+    // Custom date range (overrides timeframe)
+    if (start && end) {
+      query.date = {
+        $gte: new Date(start),
+        $lte: new Date(end)
+      };
+    }
+
+    const expenses = await Expense.find(query);
+    res.status(200).json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+}; */
 
 
 
